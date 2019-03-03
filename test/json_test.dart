@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:awersome_list/json_parsing.dart';
 import 'package:test_api/test_api.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   test('parses topstories.json', () {
@@ -15,5 +17,22 @@ void main() {
     """;
 
     expect(parseArticle(jsonString).by, "dhouston");
+  });
+
+  test('parses item.json by the network', () async {
+    final urlPrefix = 'https://hacker-news.firebaseio.com/v0/beststories.json';
+    final bestStoriesResponse = await http.get(urlPrefix);
+    if (bestStoriesResponse.statusCode == 200) {
+      final bestStoriesIds = json.decode(bestStoriesResponse.body);
+      if (bestStoriesIds.isNotEmpty) {
+        final storyUrl =
+            'https://hacker-news.firebaseio.com/v0/item/${bestStoriesIds.first}.json';
+        final storyResponse = await http.get(storyUrl);
+        if (storyResponse.statusCode == 200) {
+          expect(parseArticle(storyResponse.body).by, "tingletech");
+        }
+      }
+    }
+    return null;
   });
 }
