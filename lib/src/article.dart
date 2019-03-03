@@ -1,47 +1,68 @@
-class Article {
-  final String text;
-  final String domain;
-  final String by;
-  final String age;
-  final int score;
-  final int commentsCount;
+import 'dart:convert' as converter;
+import 'package:awersome_list/src/serializers.dart';
+import 'package:built_value/built_value.dart';
+import 'package:built_collection/built_collection.dart';
+import 'package:built_value/serializer.dart';
 
-  const Article(
-      {this.text,
-      this.domain,
-      this.by,
-      this.age,
-      this.score,
-      this.commentsCount});
+part 'article.g.dart';
+
+abstract class Article implements Built<Article, ArticleBuilder> {
+  static Serializer<Article> get serializer => _$articleSerializer;
+
+  int get id;
+
+  @nullable
+  bool get deleted;
+
+  String get type;
+
+  String get by;
+
+  int get time;
+
+  @nullable
+  String get text;
+
+  @nullable
+  bool get dead;
+
+  @nullable
+  int get parent;
+
+  @nullable
+  int get poll;
+
+  BuiltList<int> get kids;
+
+  @nullable
+  String get url;
+
+  @nullable
+  int get score;
+
+  @nullable
+  String get title;
+
+  BuiltList<int> get parts;
+
+  @nullable
+  int get descendants;
+
+  Article._();
+
+  factory Article([updates(ArticleBuilder b)]) = _$Article;
 }
 
-final articles = [
-  new Article(
-      text: "Some article 1",
-      domain: "someart.one",
-      by: "art1",
-      age: "1h",
-      score: 1,
-      commentsCount: 100),
-  new Article(
-      text: "Some article 2",
-      domain: "someart.two",
-      by: "art2",
-      age: "2h",
-      score: 2,
-      commentsCount: 200),
-  new Article(
-      text: "Some article 3",
-      domain: "someart.three",
-      by: "art3",
-      age: "3h",
-      score: 3,
-      commentsCount: 300),
-  new Article(
-      text: "Some article 4",
-      domain: "someart.four",
-      by: "art4",
-      age: "4h",
-      score: 4,
-      commentsCount: 400)
-];
+List<int> parseTopStories(String json) {
+  return [];
+//  final parsedTopStories = converter.jsonDecode(json);
+//  final topStoriesIds = List<int>.from(parsedTopStories);
+//  return topStoriesIds;
+}
+
+Article parseArticle(String json) {
+  final parsedArticle = converter.jsonDecode(json);
+  Article article =
+      standardSerializers.deserializeWith(Article.serializer, parsedArticle);
+  return article;
+}

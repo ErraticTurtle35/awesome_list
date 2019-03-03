@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:awersome_list/json_parsing.dart';
+import 'package:awersome_list/src/article.dart';
 import 'package:test_api/test_api.dart';
 import 'package:http/http.dart' as http;
 

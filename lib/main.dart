@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'src/article.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
 void main() => runApp(MyApp());
 
@@ -27,7 +28,25 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<Article> _articles = articles;
+  List<int> _articlesIds = [
+    19273955,
+    19275755,
+    19274406,
+    19282346,
+    19291558,
+    19293916,
+    19277809,
+    19271487,
+    19292382
+  ];
+
+  Future<Article> _getArticleByStoryId(int storyId) async {
+    final storyUrl = 'https://hacker-news.firebaseio.com/v0/item/$storyId.json';
+    final storyResponse = await http.get(storyUrl);
+    if (storyResponse.statusCode == 200) {
+      return parseArticle(storyResponse.body);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,39 +54,42 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: new RefreshIndicator(
-        onRefresh: () async {
-          await new Future.delayed(const Duration(seconds: 1));
-          setState(() {
-            _articles.removeAt(0);
-          });
-          return new Future.delayed(const Duration(seconds: 1));
-        },
-        child: new ListView(
-          children: _articles.map(_buildArticleItem).toList(),
-        ),
+      body: ListView(
+        children: _articlesIds
+            .map((articleId) => FutureBuilder<Article>(
+                  future: _getArticleByStoryId(articleId),
+                  builder: (BuildContext context,
+                      AsyncSnapshot<Article> articleSnapshot) {
+                    if (articleSnapshot.connectionState ==
+                        ConnectionState.done) {
+                      return _buildArticleItem(articleSnapshot.data);
+                    } else {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                  },
+                ))
+            .toList(),
       ),
     );
   }
 
   Widget _buildArticleItem(Article article) {
     return Padding(
-      key: Key(article.text),
+      key: Key(article.title),
       padding: const EdgeInsets.all(8.0),
-      child: new ExpansionTile(
-        title: new Text(article.text, style: new TextStyle(fontSize: 24.0)),
+      child: ExpansionTile(
+        title: Text(article.title , style: TextStyle(fontSize: 24.0)),
         children: <Widget>[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
-              new Text("${article.commentsCount} comments"),
-              new IconButton(
-                icon: new Icon(Icons.launch),
+              Text(article.type),
+              IconButton(
+                icon: Icon(Icons.launch),
                 color: Colors.blueGrey,
                 onPressed: () async {
-                  final fakeUrl = "https://flutter.dev";
-                  if (await canLaunch(fakeUrl)) {
-                    launch(fakeUrl);
+                  if (await canLaunch(article.url)) {
+                    launch(article.url);
                   }
                 },
               )
