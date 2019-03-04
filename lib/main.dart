@@ -1,11 +1,23 @@
-import 'package:flutter/material.dart';
-import 'src/article.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:http/http.dart' as http;
+import 'dart:collection';
 
-void main() => runApp(MyApp());
+import 'package:awersome_list/src/hacker_news_bloc.dart';
+import 'package:flutter/material.dart';
+import 'package:awersome_list/src/article.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+void main() {
+  final hnBloc = HackerNewsBloc();
+  runApp(MyApp(bloc: hnBloc));
+}
 
 class MyApp extends StatelessWidget {
+  final HackerNewsBloc bloc;
+
+  MyApp({
+    Key key,
+    this.bloc,
+  }) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -13,13 +25,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Flutter Demo Home Page', bloc: bloc),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  final HackerNewsBloc bloc;
+
+  MyHomePage({Key key, this.title, this.bloc}) : super(key: key);
 
   final String title;
 
@@ -28,47 +42,18 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<int> _articlesIds = [
-    19273955,
-    19275755,
-    19274406,
-    19282346,
-    19291558,
-    19293916,
-    19277809,
-    19271487,
-    19292382
-  ];
-
-  Future<Article> _getArticleByStoryId(int storyId) async {
-    final storyUrl = 'https://hacker-news.firebaseio.com/v0/item/$storyId.json';
-    final storyResponse = await http.get(storyUrl);
-    if (storyResponse.statusCode == 200) {
-      return parseArticle(storyResponse.body);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: ListView(
-        children: _articlesIds
-            .map((articleId) => FutureBuilder<Article>(
-                  future: _getArticleByStoryId(articleId),
-                  builder: (BuildContext context,
-                      AsyncSnapshot<Article> articleSnapshot) {
-                    if (articleSnapshot.connectionState ==
-                        ConnectionState.done) {
-                      return _buildArticleItem(articleSnapshot.data);
-                    } else {
-                      return Center(child: CircularProgressIndicator());
-                    }
-                  },
-                ))
-            .toList(),
+      body: StreamBuilder<UnmodifiableListView<Article>>(
+        stream: widget.bloc.articles,
+        initialData: UnmodifiableListView<Article>([]),
+        builder: (context, articlesSnapshot) => ListView(
+              children: articlesSnapshot.data.map(_buildArticleItem).toList(),
+            ),
       ),
     );
   }
@@ -78,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
       key: Key(article.title),
       padding: const EdgeInsets.all(8.0),
       child: ExpansionTile(
-        title: Text(article.title , style: TextStyle(fontSize: 24.0)),
+        title: Text(article.title, style: TextStyle(fontSize: 24.0)),
         children: <Widget>[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
